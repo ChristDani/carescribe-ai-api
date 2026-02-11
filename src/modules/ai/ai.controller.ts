@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
-import { getClient } from "../../config/db.js";
-import { processAndTranscribe } from "./ai.service.js";
+import { processAndTranscribe, summarizeText } from "./ai.service.js";
 
 export const getTranscription = async (req: Request, res: Response) => {
   try {
@@ -14,14 +13,32 @@ export const getTranscription = async (req: Request, res: Response) => {
     const transcription = await processAndTranscribe(audioFile);
 
     res.json({
+      success: true,
       message: "Transcripción obtenida",
-      transcription: transcription,
+      data: transcription,
     });
-  } catch (error) {
-    res.status(500).json({ error: "Error al procesar el archivo de audio" });
+  } catch (error: any) {
+    res.status(500).json({ error: "Error al procesar el archivo de audio", details: error.message});
   }
 };
 
 export const getSummary = async (req: Request, res: Response) => {
-  res.json({ message: "Resumen obtenido" });
+  try {
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: "No text provided" });
+    }
+
+    // Resumir el texto
+    const summary = await summarizeText(text);
+
+    res.json({
+      success: true,
+      message: "Resumen obtenido",
+      data: summary,
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: "Error al resumir el texto", details: error.message});
+  }
 };

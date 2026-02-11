@@ -1,9 +1,12 @@
-import { Router } from 'express'
-import { getSummary, getTranscription } from './ai.controller.js'
+import { Router } from "express";
+import { getSummary, getTranscription } from "./ai.controller.js";
+import multer from "multer";
 
-const AiRouter = Router()
+const upload = multer({ dest: "src/public/audios/" });
 
-AiRouter.post('/transcription', getTranscription)
-AiRouter.post('/summary', getSummary)
+const AiRouter = Router();
 
-export default AiRouter
+AiRouter.post("/transcription", upload.single("file"), getTranscription);
+AiRouter.post("/summary", getSummary);
+
+export default AiRouter;

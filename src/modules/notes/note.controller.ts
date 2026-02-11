@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { getClient } from "../../config/db.js";
+import { processAndTranscribe, summarizeText } from "../ai/ai.service.js";
 
 export const getNotes = async (req: Request, res: Response) => {
   try {
@@ -37,13 +38,40 @@ export const createNote = async (req: Request, res: Response) => {
     if (!client) {
       return res.status(500).json({ error: "Base de datos no conectada" });
     }
-    const {
-      nt_patient_id,
-      nt_raw_input,
-      nt_transcription,
-      nt_ai_summary,
-      nt_audio_url,
-    } = req.body;
+    const { nt_patient_id, nt_raw_input } = req.body;
+    const nt_audio = req.file;
+    let nt_transcription = null;
+    let nt_ai_summary = null;
+    let nt_audio_url = null;
+
+    if (!nt_patient_id || !nt_raw_input || !nt_audio) {
+      return res.status(400).json({ error: "Faltan campos requeridos" });
+    }
+
+    if (nt_audio) {
+      try {
+        const { data } = await processAndTranscribe(nt_audio);
+        nt_audio_url = data?.audioUrl;
+        nt_transcription = data?.text;
+      } catch (error: any) {
+        return res.status(500).json({
+          error: "Error al procesar el audio",
+          details: error.message,
+        });
+      }
+    }
+
+    const mixedInput = `${nt_transcription || ""} ${nt_raw_input || ""}`.trim();
+
+    try {
+      const { data } = await summarizeText(mixedInput);
+      nt_ai_summary = data;
+    } catch (error: any) {
+      return res.status(500).json({
+        error: "Error al generar el resumen AI",
+        details: error.message,
+      });
+    }
 
     const query = `INSERT INTO notes (nt_id, nt_patient_id, nt_raw_input, nt_transcription, nt_ai_summary, nt_audio_url)
                    VALUES (gen_random_uuid(), $1, $2, $3, $4, $5) RETURNING *`;
@@ -57,7 +85,7 @@ export const createNote = async (req: Request, res: Response) => {
     ];
 
     const result = await client.query(query, values);
-    
+
     res
       .status(201)
       .json({ message: "Nota creada", data: result.rows[0], success: true });

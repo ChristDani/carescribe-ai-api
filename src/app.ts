@@ -5,6 +5,7 @@ import morgan from 'morgan';
 // import { errorHandler } from './middlewares/error.middleware';
 import NoteRouter from './modules/notes/note.routes.js';
 import PatientRouter from './modules/patients/patient.routes.js';
+import AiRouter from './modules/ai/ai.routes.js';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(morgan('dev'));
  */
 app.use('/api/patients', PatientRouter);
 app.use('/api/notes', NoteRouter);
+app.use('/api/ai', AiRouter);
 
 /**
  * Health check (útil para Docker / AWS)
