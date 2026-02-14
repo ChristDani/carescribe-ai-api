@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { connectDB } from './config/db.ts';
+import { connectDB } from './config/db.js';
 import { seedPatients } from './seeds/patient.seed.js';
 import app from './app.js';
 import { env } from './config/env.js';

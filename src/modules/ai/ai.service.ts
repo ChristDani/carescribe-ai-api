@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import fs from "fs";
 import path from "path";
 import { promises as fsPromises } from "fs";
+import { convertToWav } from "../../utils/convertToWav.js";
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -23,8 +24,10 @@ export const processAndTranscribe = async (audioFile: any) => {
       throw new Error("Invalid audio file payload: no buffer or path provided");
     }
 
+    const wavPath = await convertToWav(filePath);
+
     const transcription = await client.audio.transcriptions.create({
-      file: fs.createReadStream(filePath),
+      file: fs.createReadStream(wavPath),
       model: "whisper-1",
       language: "es",
     });
@@ -60,7 +63,7 @@ export const summarizeText = async (text: string) => {
         },
         {
           role: "user",
-          content: `Por favor, resume y estructura el siguiente texto en un formato SOAP:\n\n${text}`,
+          content: `Por favor, resume y estructura el siguiente texto en un formato SOAP:\n\n${text}.\nAsegúrate de identificar claramente las secciones de Subjective, Objective, Assessment y Plan. Si alguna sección no tiene información, indícala como "No disponible".\nEl resumen debe ser breve, directo y fácil de entender.\n\nEjemplo de formato SOAP:\n\nSubjetivo: [Información subjetiva]\n\nObjetivo: [Información objetiva]\n\nEvaluación: [Evaluación]\n\nPlanificación: [Plan de acción]\n\nRecuerda mantener la confidencialidad y no incluir información personal identificable en el resumen.\n formato de respuesta:\nSubjetivo: [Información subjetiva]\nObjetivo: [Información objetiva]\nEvaluación: [Evaluación]\nPlanificación: [Plan de acción]`,
         },
       ],
     });

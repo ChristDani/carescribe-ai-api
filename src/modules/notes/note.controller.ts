@@ -44,15 +44,18 @@ export const createNote = async (req: Request, res: Response) => {
     let nt_ai_summary = null;
     let nt_audio_url = null;
 
-    if (!nt_patient_id || !nt_raw_input || !nt_audio) {
+    if (!nt_patient_id && (!nt_raw_input || !nt_audio)) {
       return res.status(400).json({ error: "Faltan campos requeridos" });
     }
 
     if (nt_audio) {
       try {
-        const { data } = await processAndTranscribe(nt_audio);
-        nt_audio_url = data?.audioUrl;
-        nt_transcription = data?.text;
+        const result = await processAndTranscribe(nt_audio);
+        
+        if (result.success && result.data) {
+          nt_audio_url = result.data.audioUrl;
+          nt_transcription = result.data.text;
+        }
       } catch (error: any) {
         return res.status(500).json({
           error: "Error al procesar el audio",

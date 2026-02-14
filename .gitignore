@@ -3,3 +3,6 @@
 /dist
 
 .env
+
+/src/public/audios
+/src/public/ffmpeg/win
