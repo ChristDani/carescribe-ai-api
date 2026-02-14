@@ -5,4 +5,4 @@
 .env
 
 /src/public/audios
-/src/public/ffmpeg/win
+/src/public/ffmpeg
