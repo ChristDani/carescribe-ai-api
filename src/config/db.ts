@@ -1,10 +1,6 @@
 import { Pool, Client } from "pg";
 import { env } from "./env.js";
 import { seedPatients } from "../seeds/patient.seed.js";
-import AWS from "aws-sdk";
-import fs from "fs";
-
-AWS.config.update({ region: env.AWS_REGION });
 
 // Configuración de la conexión
 const dbConfig = {
@@ -12,7 +8,6 @@ const dbConfig = {
   host: env.DB_HOST,
   password: env.DB_PASSWORD,
   port: env.DB_PORT,
-  ssl: env.NODE_ENV === "production" ? { rejectUnauthorized: false, ca: fs.readFileSync('/certs/global-bundle.pem').toString() } : false,
 };
 
 // Cliente para operaciones administrativas (sin base de datos específica)
@@ -20,6 +15,10 @@ const adminClient = new Client(dbConfig);
 
 // Cliente para operaciones de la aplicación
 let appClient: Client | null = null;
+
+if (!env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not defined');
+}
 
 export async function createDatabaseIfNotExists() {
   try {
@@ -33,7 +32,7 @@ export async function createDatabaseIfNotExists() {
 
     if (result.rows.length === 0) {
       console.log(`La base de datos "${env.DB_NAME}" no existe. Creando...`);
-      await adminClient.query(`CREATE DATABASE ${env.DB_NAME}`);
+      await adminClient.query(`CREATE DATABASE "${env.DB_NAME}"`);
       console.log(`✓ Base de datos "${env.DB_NAME}" creada exitosamente`);
     } else {
       console.log(`✓ Base de datos "${env.DB_NAME}" ya existe`);
@@ -76,11 +75,11 @@ export async function createTables() {
 }
 
 export const pool = new Pool({
-  user: env.DB_USER,
-  host: env.DB_HOST,
-  password: env.DB_PASSWORD,
-  port: env.DB_PORT,
-  ssl: env.NODE_ENV === "production" ? { rejectUnauthorized: false, ca: fs.readFileSync('/certs/global-bundle.pem').toString() } : false,
+  connectionString: env.DATABASE_URL,
+  ssl:
+    env.NODE_ENV === 'production'
+      ? { rejectUnauthorized: false }
+      : false,
 });
 
 /**
@@ -88,7 +87,7 @@ export const pool = new Pool({
  */
 export const connectDB = async (): Promise<Pool> => {
   try {
-    // await createDatabaseIfNotExists();
+    await createDatabaseIfNotExists();
     await pool.query("SELECT 1");
     await createTables();
     await seedPatients(pool);
