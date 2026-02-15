@@ -10,8 +10,8 @@ RUN npm install
 COPY . .
 
 # Certificado SSL de AWS
-# RUN mkdir -p /certs
-# COPY global-bundle.pem /certs/global-bundle.pem
+RUN mkdir -p /certs
+COPY global-bundle.pem /certs/global-bundle.pem
 
 # Build TS
 RUN npm run build

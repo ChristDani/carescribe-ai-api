@@ -88,7 +88,7 @@ export const pool = new Pool({
  */
 export const connectDB = async (): Promise<Pool> => {
   try {
-    await createDatabaseIfNotExists();
+    // await createDatabaseIfNotExists();
     await pool.query("SELECT 1");
     await createTables();
     await seedPatients(pool);
