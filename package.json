@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx watch src/server.ts",
     "build": "tsc",
+    "build:prod": "tsc && node -r dotenv/config dist/server.js dotenv_config_path=.env.production",
     "start:prod": "node dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -23,6 +24,7 @@
   "homepage": "https://github.com/ChristDani/carescribe-ai-api#readme",
   "dependencies": {
     "@prisma/client": "^7.3.0",
+    "aws-sdk": "^2.1693.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",

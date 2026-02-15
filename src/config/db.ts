@@ -1,6 +1,10 @@
-import { Pool, Client } from 'pg';
-import { env } from './env.js';
-import { seedPatients } from '../seeds/patient.seed.js';
+import { Pool, Client } from "pg";
+import { env } from "./env.js";
+import { seedPatients } from "../seeds/patient.seed.js";
+import AWS from "aws-sdk";
+import fs from "fs";
+
+AWS.config.update({ region: env.AWS_REGION });
 
 // Configuración de la conexión
 const dbConfig = {
@@ -8,6 +12,7 @@ const dbConfig = {
   host: env.DB_HOST,
   password: env.DB_PASSWORD,
   port: env.DB_PORT,
+  ssl: env.NODE_ENV === "production" ? { rejectUnauthorized: false, ca: fs.readFileSync('/certs/global-bundle.pem').toString() } : false,
 };
 
 // Cliente para operaciones administrativas (sin base de datos específica)
@@ -15,10 +20,6 @@ const adminClient = new Client(dbConfig);
 
 // Cliente para operaciones de la aplicación
 let appClient: Client | null = null;
-
-if (!env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not defined');
-}
 
 export async function createDatabaseIfNotExists() {
   try {
@@ -75,11 +76,11 @@ export async function createTables() {
 }
 
 export const pool = new Pool({
-  connectionString: env.DATABASE_URL,
-  ssl:
-    env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
+  user: env.DB_USER,
+  host: env.DB_HOST,
+  password: env.DB_PASSWORD,
+  port: env.DB_PORT,
+  ssl: env.NODE_ENV === "production" ? { rejectUnauthorized: false, ca: fs.readFileSync('/certs/global-bundle.pem').toString() } : false,
 });
 
 /**
@@ -88,12 +89,12 @@ export const pool = new Pool({
 export const connectDB = async (): Promise<Pool> => {
   try {
     await createDatabaseIfNotExists();
-    await pool.query('SELECT 1');
+    await pool.query("SELECT 1");
     await createTables();
     await seedPatients(pool);
     return pool;
   } catch (error: any) {
-    console.error('Database connection failed:', error.message);
+    console.error("Database connection failed:", error.message);
     throw error;
   }
 };
