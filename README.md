@@ -85,6 +85,23 @@ Notas sobre puertos y docker-compose
 - El servicio `api` expone el puerto 3000 en el host (`3000:3000`). El Nginx del host debe reenviar las peticiones entrantes en el puerto 80 hacia `http://127.0.0.1:3000`.
 - El servicio `db` es accesible desde `api` mediante `DB_HOST=db` dentro de la red creada por Docker Compose.
 
+Red Docker entre contenedores
+
+Para asegurar comunicación fiable entre el contenedor de la base de datos y el backend, crea y usa una red Docker dedicada. Opciones:
+
+- Usar Docker Compose (recomendado): `docker-compose` crea automáticamente una red aislada por proyecto y conecta los servicios definidos en `docker-compose.yml`. Asegúrate de levantar ambos servicios con `docker-compose up -d`.
+- Crear manualmente una red y arrancar contenedores individuales:
+
+```bash
+docker network create carescribe-net
+docker run -d --name db --network carescribe-net -e POSTGRES_USER=$DB_USER -e POSTGRES_PASSWORD=$DB_PASSWORD -e POSTGRES_DB=$DB_NAME postgres:16-alpine
+docker run -d --name api --network carescribe-net --env-file .env -p 3000:3000 carescribe-ai-api
+```
+
+En este caso, dentro del contenedor `api` la variable `DB_HOST` debe apuntar al nombre del contenedor `db` (ej. `db`).
+
+Nota: si usas `docker-compose`, no es necesario crear la red manualmente; Compose usará por defecto una red del tipo `project_default` que conecta todos los servicios del archivo.
+
 Ejecutar localmente sin Docker
 
 1. Instalar dependencias:
